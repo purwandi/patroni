@@ -83,6 +83,19 @@ postgresql:
     replication:
       username: replicator
       sslmode: disable
+  pg_hba:
+    "local" is for Unix domain socket connections only
+    - local   all         all                         peer
+
+    # IPv4 local connections:
+    - host    all         all         127.0.0.1/32    scram-sha-256
+    - host    all         all         0.0.0.0/0       scram-sha-256
+
+    # Allow replication connections from localhost, by a user with the
+    # replication privilege.
+    - host    replication replicator  10.0.0.21/32    trust
+    - host    replication replicator  10.0.0.22/32    trust
+    # - host    replication replicator  10.0.0.23/32  trust
 restapi:
   connect_address: "$(hostname):8008"
   listen: "*:8008"
@@ -95,19 +108,6 @@ bootstrap:
     postgresql:
       parameters:
         max_connections: 500
-
-  pg_hba:
-    # "local" is for Unix domain socket connections only
-    # - local   all         all                         peer
-
-    # # IPv4 local connections:
-    # - host    all         all         127.0.0.1/32    scram-sha-256
-    # - host    all         all         0.0.0.0/0       scram-sha-256
-
-    # Allow replication connections from localhost, by a user with the
-    # replication privilege.
-    - host    replication replicator  10.0.0.21/32    trust
-    - host    replication replicator  10.0.0.22/32    trust
 
   initdb:
     - encoding: UTF8
@@ -136,5 +136,5 @@ LimitNOFILE=65536
 WantedBy=multi-user.target
 DATA
 
-# echo "enable patroni service"
-# sudo systemctl enable --now patroni
+echo "enable patroni service"
+sudo systemctl enable --now patroni
