@@ -35,7 +35,7 @@ After=network-online.target
 
 [Service]
 ExecStart=/bin/bash -c "/usr/bin/consul agent -node $(hostname) -config-dir /etc/consul/config"
-ExecReload=/bin/kill --signal HUP $MAINPID
+ExecReload=/bin/kill --signal HUP \$MAINPID
 KillMode=process
 KillSignal=SIGTERM
 Restart=on-failure

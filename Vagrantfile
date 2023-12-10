@@ -4,9 +4,12 @@ Vagrant.configure(2) do |config|
   config.vm.provision "file", source: "src/consul", destination: "~/.local/bin/consul"
 
   config.vm.provision "shell", path: "helper/bootstrap.sh"
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vbguest.auto_update = false
 
   config.vm.define "bastion" do |node|
-    node.vm.box               = "almalinux/9"
+  node.vm.box               = "almalinux/9"
+  node.vm.box               = "rockylinux/9"
     node.vm.box_check_update  = false
     node.vm.hostname          = "bastion"
     node.vm.network "private_network", ip: "10.0.0.2"
@@ -18,8 +21,9 @@ Vagrant.configure(2) do |config|
 
   (1..3).each do |i|
     config.vm.define "consul-0#{i}" do |node|
-
-      node.vm.box               = "almalinux/9"
+      node.disksize.size        = '10GB'
+      # node.vm.box               = "almalinux/9"
+      node.vm.box               = "rockylinux/9"
       node.vm.box_check_update  = false
       node.vm.hostname          = "consul-0#{i}"
       node.vm.network "private_network", ip: "10.0.0.1#{i}"
@@ -36,7 +40,9 @@ Vagrant.configure(2) do |config|
 
   (1..2).each do |i|
     config.vm.define "database-0#{i}" do |node|
-      node.vm.box               = "almalinux/9"
+      node.disksize.size        = '10GB'
+      # node.vm.box               = "almalinux/9"
+      node.vm.box               = "rockylinux/9"
       node.vm.box_check_update  = false
       node.vm.hostname          = "database-0#{i}"
       node.vm.network "private_network", ip: "10.0.0.2#{i}"

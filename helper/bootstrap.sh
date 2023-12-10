@@ -19,4 +19,6 @@ cat >> /etc/hosts << DATA
 10.0.0.21   database-01
 10.0.0.22   database-02
 10.0.0.23   database-03
+10.0.0.24   database-04
+10.0.0.25   database-05
 DATA

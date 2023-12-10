@@ -47,7 +47,7 @@ After=network-online.target
 
 [Service]
 ExecStart=/bin/bash -c "/usr/bin/consul agent -node $(hostname) -config-dir /etc/consul/config"
-ExecReload=/bin/kill --signal HUP $MAINPID
+ExecReload=/bin/kill --signal HUP \$MAINPID
 KillMode=process
 KillSignal=SIGTERM
 Restart=on-failure
@@ -78,27 +78,45 @@ postgresql:
   connect_address: "$(hostname):5432"
   bin_dir: /usr/pgsql-15/bin/
   data_dir: /data/postgresql/15/data
-  listen: "*:5432"
+  pgpass: /var/lib/pgsql/.pgpass
+  use_unix_socket: true
+  listen: "0.0.0.0:5432"
   authentication:
     replication:
       username: replicator
+      password: WutwNXR7px9ALnsMXTqk999JXRAWMmr4
       sslmode: disable
+    rewind:
+      username: rewinder
+      password: ioYFYNUyqCFvJnTp9dJvfUxTCe9UthXX
+      sslmode: disable
+  parameters:
+    log_line_prefix: '%m [%p] %q%u@%d '
+    log_duration: 'on'
+    log_statement: 'none'
+    log_min_duration_statement: 0
+    logging_collector: 'on'
+    log_destination: 'csvlog'
   pg_hba:
-    "local" is for Unix domain socket connections only
-    - local   all         all                         peer
-
+    # "local" is for Unix domain socket connections only
+    - local   all             all                                     peer
     # IPv4 local connections:
-    - host    all         all         127.0.0.1/32    scram-sha-256
-    - host    all         all         0.0.0.0/0       scram-sha-256
-
+    - host    all             all             127.0.0.1/32            scram-sha-256
+    - host    all             all             0.0.0.0/0               scram-sha-256
+    # IPv6 local connections:
+    - host    all             all             ::1/128                 scram-sha-256
     # Allow replication connections from localhost, by a user with the
     # replication privilege.
-    - host    replication replicator  10.0.0.21/32    trust
-    - host    replication replicator  10.0.0.22/32    trust
-    # - host    replication replicator  10.0.0.23/32  trust
+    - local   replication all                                         peer
+    - host    replication replicator          127.0.0.1/32            scram-sha-256
+    - host    replication replicator          10.0.0.21/32            scram-sha-256
+    - host    replication replicator          10.0.0.22/32            scram-sha-256
 restapi:
   connect_address: "$(hostname):8008"
   listen: "*:8008"
+  authentication:
+    username: patroni
+    password: 4ransRqxWLaHcbrsgHhpUsYtJU3WNuFb
 bootstrap:
   dcs:
     ttl: 30
@@ -106,9 +124,13 @@ bootstrap:
     retry_timeout: 10
     maximum_lag_on_failover: 1048576
     postgresql:
+      use_pg_rewind: true
       parameters:
         max_connections: 500
-
+  pg_hba:
+    - host    all             postgres        127.0.0.1/32            trust
+    - host    all             replicator      127.0.0.1/32            trust
+    - host    all             all             0.0.0.0/0               scram-sha-256
   initdb:
     - encoding: UTF8
 DATA
@@ -126,7 +148,7 @@ Group=postgres
 Environment=HOME="/var/lib/pgsql"
 WorkingDirectory=/var/lib/pgsql
 ExecStart=/bin/patroni /etc/patroni/config.yaml
-ExecReload=/bin/kill --signal HUP $MAINPID
+ExecReload=/bin/kill --signal HUP \$MAINPID
 KillMode=process
 TimeoutSec=30
 Restart=on-failure
